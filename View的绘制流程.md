@@ -358,9 +358,15 @@ private boolean drawSoftware(Surface surface, AttachInfo attachInfo, int xoff, i
     这个看完本文应该就很好理解了,`View` 的绘制流程是在 `Activity` 的第一次 `onResume()`  方法后开始执行的，因此是拿不到的；
 2. `onResume()` 方法有时候能拿到 `View` 的宽高，有时候拿不到；
     这个也很好理解，如果是第一次执行 `onResume()` 方法，那么此时 `View` 的绘制流程也没有执行因此是拿不到的，但是如果是 `Activity` 前后台切换等情况触发 `Activity` 调用 `onResume()` 方法时，此时的 `View` 已经绘制过了，因此是可以拿到宽高的；
-3. 根据上面的源码分析，我们就很好理解下面这张图了
-![UI层级](https://upload-images.jianshu.io/upload_images/7082912-0fac452db4960341.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-我们最终的布局是被加载到 `mContentParent` 布局中，这个布局实际上是一个 FrameLayout;
-4. 为什么自定义View调用 `requestLayout()` 方法可以让 `View` 重新执行整套绘制流程，这个就更好理解了,因为该方法会重新执行一遍 `
+3. 为什么自定义View调用 `requestLayout()` 方法可以让 `View` 重新执行整套绘制流程，这个就更好理解了,因为该方法会重新执行一遍 `
 performTraversals()` 方法;
+
+最后我们再来看两张图片:
+![UI层级](https://upload-images.jianshu.io/upload_images/7082912-0fac452db4960341.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![Activity中的UI树](https://upload-images.jianshu.io/upload_images/7082912-1e2ee4d47af15d37.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+第一张图片是我自己根据第二张图片绘制的UI层级图，相对比较好理解，我们主要分析下第二张图片：
+1. 可以发下我们的 `mContentParent` 对象和 `mDecorView` 对象之间还是有很多层包裹的;
+2. 我们的 `ActionBar` 对象并不是在 `mContentParent` 对象中而是在一个ID为 `action_bar_container` 的容器中；
+3. 我们再次查看`mDecorView` 的孩子，发现我们的状态栏和导航栏都是其孩子，因此如果要获取到状态栏的高度和导航栏的高度我们可以通过获取 `mDecorView` 对象获取，当然如果 `Activity` 是全屏的，则无法获取到状态栏的高度；
 
