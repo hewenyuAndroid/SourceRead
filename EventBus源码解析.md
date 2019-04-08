@@ -1,8 +1,8 @@
 ### 简介
-在使用事件总线的时候，我们通常是通过其单例对象来进行操作的，其单例对象是通过 DCL 实现的；本文将从源码的角度来分析`EventBus` 的实现原理；
+项目开发过程中，事件总线使用的还是比较多的，其使用起来简洁方便；本文将从源码的角度来分析`EventBus` 的实现原理；
 
 ### register()
-通过单例对象调用 `register()` 方法即可订阅消息，它的入参是一个 `Object` 对象，也就是说任何对象都可以订阅消息，`register()` 方法的代码如下：
+通过单例对象(DCL)调用 `register()` 方法即可订阅消息，它的入参是一个 `Object` 对象，也就是说任何对象都可以订阅消息，`register()` 方法的代码如下：
 ```Java
 public void register(Object subscriber) {
     // 获取 subscriber(订阅者) 的 Class 对象
@@ -69,6 +69,7 @@ private List<SubscriberMethod> findUsingInfo(Class<?> subscriberClass) {
             // 这里即为反射解析 subscriber 对象的实际位置
             findUsingReflectionInSingleClass(findState);
         }
+        // 获取父类遍历父类中的订阅方法
         findState.moveToSuperclass();
     }
     // 这里将 findUsingReflectionInSingleClass() 中解析的 SubscriberMethod 列表重新进行封装
@@ -177,18 +178,27 @@ private void subscribe(Object subscriber, SubscriberMethod subscriberMethod) {
 ```
 通过上面的代码我们可以知道，整个订阅的过程中，有三个 Map 集合作为缓存非常关键：
 **1. subscriptionsByEventType**
+
 key：事件类型的 `Class` 对象，这里的事件类型即上述分析的订阅方法的参数类型；
+
 value：`CopyOnWriteArrayList<Subscription>` 集合对象，`Subscription` 为 `Subscriber`  和 `SubscriberMethod` 两个对象的封装；
+
 `subscriptionsByEventType` 的作用在于发送事件时，可以通过事件类型拿到所有订阅该事件的方法然后发送事件；
 
 **2. typesBySubscriber**
+
 key：`subscriber` 对象，即订阅对象；
+
 value：`List<Class<?>>` 集合对象，缓存的是该订阅对象中订阅的所有的事件对象的类型集合；
+
 `typesBySubscriber` 的作用在于，解绑订阅时，可以通过对象快速的找到需要解绑的事件类型，通过事件类型快速的定位到 `subscriptionsByEventType` 集合中需要解绑的位置；
 
 **3. stickyEvents**
+
 key：事件类型的`Class`对象，这里的事件类型即上述分析的订阅方法的参数类型；
+
 value：粘性事件的事件对象；
+
 `stickyEvents` 粘性事件的原理其实就是将粘性事件缓存到该集合中，如果后续订阅的方法支持粘性事件，同时`stickyEvents` 集合中存在该事件类型的对象，此时就会将该事件发送给订阅的方法；
 
 ### unregister()
